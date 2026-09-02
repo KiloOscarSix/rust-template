@@ -1,0 +1,55 @@
+# Build artifacts
+target/
+**/target/
+debug/
+**/*.rs.bk
+*.pdb
+
+# Nightly-only toolchain config. The image builds on stable; leaving these in
+# would pull a nightly toolchain and apply `-Z` flags stable cargo rejects.
+rust-toolchain.toml
+.cargo/
+
+# Secrets and local config
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.keystore.json
+
+# VCS, CI and agent config — no build stage reads these
+.git/
+.github/
+.gitignore
+.claude/
+
+# Docs and tooling
+*.md
+docs/
+deny.toml
+clippy.toml
+rustfmt.toml
+bacon.toml
+cargo-generate.toml
+
+# Docker meta: compose orchestrates the image, it is never read from inside it
+compose.yaml
+docker/
+.dockerignore
+
+# Editor and OS noise
+.vscode/
+.idea/
+*.sw?
+.DS_Store
+__pycache__/
+.venv/
+
+# Frontend
+node_modules/
+dist/
+build/
+
+# NOTE: `.sqlx/` and `migrations/` are deliberately NOT ignored — an offline
+# build type-checks its queries against them.

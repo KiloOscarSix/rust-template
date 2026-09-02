@@ -1,0 +1,65 @@
+default_job = "clippy"
+
+[jobs.clippy]
+command = [
+    "cargo", "clippy", "--workspace", "--all-targets", "--all-features",
+    "--color", "always", "--", "-D", "warnings",
+]
+need_stdout = false
+{%- if use_db %}
+env.SQLX_OFFLINE = "true"
+{%- endif %}
+
+[jobs.test]
+command = [
+    "cargo", "test", "--workspace", "--all-targets", "--all-features",
+    "--color", "always",
+]
+need_stdout = true
+{%- if use_db %}
+env.SQLX_OFFLINE = "true"
+{%- endif %}
+
+[jobs.nextest]
+command = [
+    "cargo", "nextest", "run", "--workspace", "--all-targets", "--all-features",
+    "--hide-progress-bar", "--failure-output", "final",
+]
+analyzer = "nextest"
+need_stdout = true
+{%- if use_db %}
+env.SQLX_OFFLINE = "true"
+{%- endif %}
+
+[jobs.fmt]
+command = ["cargo", "fmt", "--all", "--check"]
+need_stdout = true
+{%- if kind == "bin" %}
+
+[jobs.run]
+command = [
+    "cargo", "run", "-p", "{{project-name}}", "--all-features",
+    "--color", "always",
+]
+need_stdout = true
+allow_warnings = true
+background = false
+on_change_strategy = "kill_then_restart"
+{%- if use_db %}
+env.SQLX_OFFLINE = "true"
+{%- endif %}
+{%- endif %}
+{%- if use_db %}
+
+[jobs.clippy-live]
+command = [
+    "cargo", "clippy", "--workspace", "--all-targets", "--all-features",
+    "--color", "always", "--", "-D", "warnings",
+]
+need_stdout = false
+{%- endif %}
+
+[exports.locations]
+auto = true
+path = ".bacon-locations"
+line_format = "{% raw %}{kind} {path}:{line}:{column} {message}{% endraw %}"

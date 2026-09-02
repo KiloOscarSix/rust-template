@@ -1,0 +1,56 @@
+[template]
+cargo_generate_version = ">=0.20.0"
+ignore = ["target", "Cargo.lock", ".DS_Store"]
+
+# Copied verbatim, never rendered: the vendored rust-skills rules contain
+# literal `{{` / `{%` in macro examples, which Liquid would eat.
+exclude = [".claude/skills/**"]
+
+[placeholders]
+description = { type = "string", prompt = "Short description", default = "" }
+
+license = { type = "string", prompt = "License", choices = [
+  "MIT OR Apache-2.0", "MIT", "Apache-2.0", "AGPL-3.0-or-later", "Proprietary",
+], default = "MIT OR Apache-2.0" }
+
+layout = { type = "string", prompt = "Layout", choices = ["single", "workspace"], default = "single" }
+kind = { type = "string", prompt = "Crate kind", choices = ["bin", "lib"], default = "bin" }
+
+use_async = { type = "bool", prompt = "Async runtime (tokio) + tracing?", default = true }
+use_cli = { type = "bool", prompt = "CLI args (clap) + dotenvy?", default = false }
+use_http = { type = "bool", prompt = "HTTP client (reqwest) + serde?", default = false }
+use_db = { type = "bool", prompt = "Postgres (sqlx + jiff + uuid)?", default = false }
+use_ci = { type = "bool", prompt = "GitHub Actions CI + cargo-deny?", default = true }
+use_docker = { type = "bool", prompt = "Dockerfile + compose (bin only)?", default = true }
+
+# --- conditional file inclusion -------------------------------------------
+
+[conditional.'layout == "workspace"']
+ignore = ["src"]
+
+[conditional.'layout == "single"']
+ignore = ["crates"]
+
+# NOTE: ignore patterns match the literal template path -- `*`/`**` will not
+# cross a `{{project-name}}` path segment, so it is spelled out here.
+[conditional.'kind == "bin"']
+ignore = ["src/lib.rs", "crates/{{project-name}}/src/lib.rs"]
+
+[conditional.'kind == "lib"']
+# No binary to containerise.
+ignore = [
+  "src/main.rs",
+  "crates/{{project-name}}/src/main.rs",
+  "docker",
+  ".dockerignore",
+  "compose.yaml",
+]
+
+[conditional.'use_docker == false']
+ignore = ["docker", ".dockerignore", "compose.yaml"]
+
+[conditional.'use_ci == false']
+ignore = [".github", "deny.toml"]
+
+[conditional.'use_db == false && use_cli == false && use_async == false']
+ignore = [".env.example"]

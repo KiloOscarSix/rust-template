@@ -1,0 +1,51 @@
+# Rust & Cargo
+target/
+/debug/
+*.pdb
+**/*.rs.bk
+
+# bacon
+.bacon-locations
+
+# Coverage & profiling
+*.profraw
+*.profdata
+lcov.info
+tarpaulin-report.*
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.keystore.json
+
+# Claude Code local state
+.claude/settings.local.json
+
+# Logs
+log.txt
+*.log
+logs/
+
+# Python helper scripts
+__pycache__/
+.venv/
+
+# Frontend (only if a JS dashboard/client is added)
+node_modules/
+dist/
+dist-ssr/
+build/
+.svelte-kit/
+.output/
+*.timestamp-*
+
+# IDEs & system files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.sw?
+.DS_Store

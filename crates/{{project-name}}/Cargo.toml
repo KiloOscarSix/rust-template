@@ -1,0 +1,70 @@
+[package]
+name = "{{project-name}}"
+description = "{{description}}"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror.workspace = true
+itertools.workspace = true
+{%- if use_async %}
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+{%- endif %}
+{%- if use_cli %}
+clap.workspace = true
+dotenvy.workspace = true
+{%- endif %}
+{%- if use_http %}
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+{%- endif %}
+{%- if use_db %}
+sqlx.workspace = true
+jiff.workspace = true
+jiff-sqlx.workspace = true
+uuid.workspace = true
+{%- endif %}
+
+# Uncomment to pull in the rest of the workspace standard library; versions and
+# features are already pinned in the root Cargo.toml.
+# axum.workspace = true     # HTTP server (needs tokio)
+# tower.workspace = true    # Service middleware
+# dashmap.workspace = true  # concurrent map
+# rand.workspace = true     # random number generation
+# rayon.workspace = true    # data-parallel iterators
+# moka.workspace = true     # concurrent TTL cache (async `Cache`)
+# futures.workspace = true  # StreamExt / join! / select!
+# url.workspace = true      # URL parsing
+# utoipa.workspace = true   # OpenAPI schema derive (needs serde)
+{%- unless use_db %}
+# jiff.workspace = true     # dates and times
+{%- endunless %}
+{%- unless use_http %}
+# serde.workspace = true
+# serde_json.workspace = true
+{%- endunless %}
+#
+# Frontend -- one renderer per binary, not a stack. Each needs a render-mode
+# feature chosen in this crate's own `[features]` table.
+# leptos.workspace = true        # + leptos_meta, leptos_router, leptos_axum
+# dioxus.workspace = true        # + dioxus-router
+# tauri.workspace = true         # + tauri-build under [build-dependencies]
+
+[dev-dependencies]
+# criterion.workspace = true
+#
+# Each benchmark also needs its own target, or cargo hands the file to libtest:
+#
+#   [[bench]]
+#   name = "my_bench"
+#   harness = false

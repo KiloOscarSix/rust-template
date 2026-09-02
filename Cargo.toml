@@ -1,0 +1,409 @@
+[workspace]
+resolver = "3"
+{%- if layout == "workspace" %}
+members = ["crates/*"]
+{%- endif %}
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+authors = ["{{authors}}"]
+license = "{{license}}"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+
+unused = { level = "warn", priority = -1 }
+unused_imports = "deny"
+unused_must_use = "deny"
+
+unreachable_pub = "warn"
+unused_qualifications = "warn"
+
+async_fn_in_trait = "allow"
+
+# missing_debug_implementations = "warn"
+
+rust_2018_idioms = { level = "deny", priority = -1 }
+
+# Catch accidental lifetime elision weirdness
+elided_lifetimes_in_paths = "deny"
+
+# Common correctness footguns
+noop_method_call = "deny"
+redundant_lifetimes = "deny"
+single_use_lifetimes = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+variant_size_differences = "warn"
+
+# Future compatibility
+future_incompatible = { level = "deny", priority = -1 }
+
+[workspace.lints.clippy]
+
+# Correctness / panic prevention
+
+unwrap_used = "deny"
+expect_used = "warn"          # bump to "deny" once the project stabilises
+
+panic = "deny"
+panic_in_result_fn = "deny"
+unreachable = "deny"
+
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+
+indexing_slicing = "warn"
+string_slice = "warn"
+
+unchecked_time_subtraction = "warn"
+
+# Async correctness
+
+await_holding_lock = "deny"
+await_holding_refcell_ref = "deny"
+
+unused_async = "warn"
+
+# Performance
+
+large_futures = "warn"
+large_stack_arrays = "warn"
+
+redundant_clone = "warn"
+inefficient_to_string = "warn"
+
+rc_buffer = "warn"
+clone_on_ref_ptr = "warn"
+
+# API quality
+
+semicolon_if_nothing_returned = "warn"
+
+must_use_candidate = "warn"
+return_self_not_must_use = "warn"
+too_long_first_doc_paragraph = "warn"
+derive_partial_eq_without_eq = "warn"
+implicit_hasher = "warn"
+
+missing_const_for_fn = "warn"
+
+# Error handling
+
+result_large_err = "warn"
+map_err_ignore = "warn"
+unwrap_in_result = "warn"
+error_impl_error = "warn"
+
+# Style / maintainability
+
+wildcard_imports = "warn"
+wildcard_enum_match_arm = "warn"
+
+manual_assert = "warn"
+manual_ok_or = "warn"
+
+match_same_arms = "warn"
+
+assert_is_empty = "warn"
+
+# Keeping attributes honest
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+
+# Memory and synchronisation
+mem_forget = "deny"
+mutex_atomic = "warn"
+rc_mutex = "warn"
+
+# Pedantic + nursery
+
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+
+# Noise reductions
+
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+struct_excessive_bools = "allow"
+too_many_lines = "allow"
+
+similar_names = "allow"
+
+# Often counterproductive in real systems
+implicit_return = "allow"
+single_call_fn = "allow"
+single_match_else = "allow"
+
+# Conflicts with `unreachable_pub`
+redundant_pub_crate = "allow"
+
+# Versions and features are pinned here once; member crates only ever say
+# `foo.workspace = true`.
+[workspace.dependencies]
+{%- if layout == "workspace" %}
+{{project-name}} = { path = "crates/{{project-name}}" }
+{%- endif %}
+
+# Errors
+thiserror = { version = "*", default-features = false, features = ["std"] }
+
+# Collections and concurrency
+itertools = { version = "*", default-features = false, features = ["use_std"] }
+rayon = { version = "*", default-features = false }
+dashmap = { version = "*", default-features = false, features = ["serde"] }
+moka = { version = "*", default-features = false, features = ["future"] }
+rand = { version = "*", default-features = false, features = [
+  "std",
+  "std_rng",
+  "sys_rng",
+  "thread_rng",
+] }
+
+# Serialization
+# nanoserde is the fast-compiling alternative (derive-only, no syn/quote), but
+# it is a separate trait ecosystem -- use it only in leaf crates that own their
+# format end to end, never for types crossing a crate or wire boundary.
+serde = { version = "*", default-features = false, features = ["std", "derive"] }
+serde_json = { version = "*", default-features = false, features = ["std"] }
+
+# Dates and times
+jiff = { version = "*", default-features = false, features = [
+  "std",
+  "serde",
+  "perf-inline",
+  "tz-system",
+  "tz-fat",
+  "tzdb-bundle-platform",
+  "tzdb-zoneinfo",
+  "tzdb-concatenated",
+] }
+
+# CLI and configuration
+clap = { version = "*", default-features = false, features = [
+  "std",
+  "help",
+  "usage",
+  "error-context",
+  "suggestions",
+  "derive",
+  "env",
+] }
+dotenvy = { version = "*", default-features = false }
+
+# HTTP client
+reqwest = { version = "0.13", default-features = false, features = [
+  "rustls",
+  "json",
+  "http2",
+  "charset",
+] }
+url = { version = "*", default-features = false, features = ["std", "serde"] }
+
+# HTTP server
+axum = { version = "*", default-features = false, features = [
+  "http1",
+  "http2",
+  "macros",
+  "form",
+  "json",
+  "matched-path",
+  "original-uri",
+  "query",
+  "tokio",
+  "tower-log",
+  "tracing",
+] }
+tower = { version = "*", default-features = false, features = ["util"] }
+utoipa = { version = "*", default-features = false, features = [
+  "macros",
+  "jiff_0_2",
+  "uuid",
+] }
+
+# Database
+sqlx = { version = "*", default-features = false, features = [
+  "macros",
+  "migrate",
+  "postgres",
+  "runtime-tokio",
+  "tls-rustls-aws-lc-rs",
+  "uuid",
+  "json",
+] }
+jiff-sqlx = { version = "*", default-features = false, features = ["postgres"] }
+uuid = { version = "*", default-features = false, features = [
+  "std",
+  "v4",
+  "serde",
+] }
+
+# Async runtime
+tokio = { version = "*", default-features = false, features = [
+  "macros",
+  "rt-multi-thread",
+  "signal",
+  "time",
+  "sync",
+] }
+futures = { version = "*", default-features = false, features = [
+  "std",
+  "async-await",
+] }
+
+# Observability
+tracing = { version = "*", default-features = false, features = [
+  "std",
+  "attributes",
+] }
+tracing-subscriber = { version = "*", default-features = false, features = [
+  "std",
+  "fmt",
+  "ansi",
+  "smallvec",
+  "tracing-log",
+  "env-filter",
+] }
+
+# Frontend -- one renderer per binary, not a stack
+leptos = { version = "*", default-features = false }
+leptos_meta = { version = "*", default-features = false }
+leptos_router = { version = "*", default-features = false }
+leptos_axum = { version = "*", default-features = false }
+dioxus = { version = "*", default-features = false, features = [
+  "lib",
+  "launch",
+  "logger",
+  "devtools",
+] }
+dioxus-router = { version = "*", default-features = false }
+tauri = { version = "*", default-features = false, features = [
+  "wry",
+  "compression",
+  "common-controls-v6",
+  "dynamic-acl",
+  "x11",
+  "dbus",
+] }
+tauri-build = { version = "*", default-features = false }
+
+# Benchmarking
+criterion = { version = "*", default-features = false, features = [
+  "cargo_bench_support",
+] }
+
+[profile.dev]
+opt-level = 0
+debug = false
+debug-assertions = true
+overflow-checks = true
+incremental = true
+codegen-units = 256
+lto = false
+
+[profile.dev.build-override]
+opt-level = 3
+debug = false
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
+debug-assertions = false
+overflow-checks = false
+incremental = false
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+{%- comment -%}
+Template maintainers: everything below is the single-crate layout's own
+`[package]`. cargo-generate keeps either this file's package section or
+crates/{{project-name}}/Cargo.toml, never both, so the two must offer the same
+dependency menu -- edit them together.
+{%- endcomment %}
+{%- unless layout == "workspace" %}
+
+[package]
+name = "{{project-name}}"
+description = "{{description}}"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror.workspace = true
+itertools.workspace = true
+{%- if use_async %}
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+{%- endif %}
+{%- if use_cli %}
+clap.workspace = true
+dotenvy.workspace = true
+{%- endif %}
+{%- if use_http %}
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+{%- endif %}
+{%- if use_db %}
+sqlx.workspace = true
+jiff.workspace = true
+jiff-sqlx.workspace = true
+uuid.workspace = true
+{%- endif %}
+
+# Uncomment to pull in the rest of the workspace standard library; versions and
+# features are already pinned above.
+# axum.workspace = true     # HTTP server (needs tokio)
+# tower.workspace = true    # Service middleware
+# dashmap.workspace = true  # concurrent map
+# rand.workspace = true     # random number generation
+# rayon.workspace = true    # data-parallel iterators
+# moka.workspace = true     # concurrent TTL cache (async `Cache`)
+# futures.workspace = true  # StreamExt / join! / select!
+# url.workspace = true      # URL parsing
+# utoipa.workspace = true   # OpenAPI schema derive (needs serde)
+{%- unless use_db %}
+# jiff.workspace = true     # dates and times
+{%- endunless %}
+{%- unless use_http %}
+# serde.workspace = true
+# serde_json.workspace = true
+{%- endunless %}
+#
+# Frontend -- one renderer per binary, not a stack. Each needs a render-mode
+# feature chosen in this crate's own `[features]` table.
+# leptos.workspace = true        # + leptos_meta, leptos_router, leptos_axum
+# dioxus.workspace = true        # + dioxus-router
+# tauri.workspace = true         # + tauri-build under [build-dependencies]
+
+[dev-dependencies]
+# criterion.workspace = true
+#
+# Each benchmark also needs its own target, or cargo hands the file to libtest:
+#
+#   [[bench]]
+#   name = "my_bench"
+#   harness = false
+{%- endunless %}
