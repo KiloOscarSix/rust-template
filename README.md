@@ -46,9 +46,19 @@ cargo clippy --target wasm32-unknown-unknown --all-targets --all-features -- -D 
 
 ## CI
 
-`.github/workflows/ci.yml` runs `rustfmt`, `clippy`, tests and `cargo-deny` in
-parallel, then a release `build` gated on the first three. It builds on
-**stable** (`RUSTUP_TOOLCHAIN=stable` outranks `rust-toolchain.toml`, and
+`.github/workflows/ci.yml` splits the checks by cost, and the split is the whole
+design:
+
+- **Under ~60s** (`rustfmt`, `cargo-deny`) — a `needs:` gate on the release
+  `build`{% if use_docker and kind == "bin" %} and the `image` build{% endif %}. Cheap
+  enough that waiting is free, and a gate **fails properly**: the run ends
+  `failure` and the checks list names the job that broke.
+- **Anything slower** (`clippy`, tests) — runs in parallel with the build and
+  ends with `./.github/actions/cancel-run`, so a failure kills the in-flight
+  build instead of letting it finish for nothing.
+
+It builds on **stable**
+(`RUSTUP_TOOLCHAIN=stable` outranks `rust-toolchain.toml`, and
 `RUSTFLAGS=""` clears the nightly-only flags in `.cargo/config.toml`), so the
 CI format gate is weaker than `cargo fmt` locally — stable `rustfmt` ignores
 the unstable options rather than erroring.
@@ -72,6 +82,11 @@ manifests must parse on stable cargo.
 
 `.sqlx/` and `migrations/` are deliberately in the build context; almost
 everything else, including `.claude/`, is not.
+
+CI's `image` job builds this on every trigger, so a pull request proves the
+Dockerfile still works, and pushes to `ghcr.io/<owner>/<repo>` on `main` and
+`v*` tags. A Dockerfile that CI never builds rots quietly — nothing else in the
+pipeline compiles it.
 {%- endif %}
 {%- if use_db %}
 
