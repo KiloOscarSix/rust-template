@@ -1,111 +1,72 @@
-## Stack
+# {{crate_name}}
 
-- Rust 2024 edition, nightly toolchain (pinned in `rust-toolchain.toml`).
-  {%- if use_async %}
-- Async on `tokio`; logging via `tracing`.
-  {%- endif %}
-  {%- if use_http %}
-- HTTP client `reqwest`; serialisation `serde`.
-  {%- endif %}
-  {%- if use_cli %}
-- CLI args via `clap`; `.env` loaded with `dotenvy`.
-  {%- endif %}
-  {%- if use_db %}
-- Postgres via `sqlx`, always with the compile-time macros (`query!`,
-  `query_as!`, `query_scalar!`) — never the runtime `query()` forms.
-  {%- endif %}
+Rust 2024, nightly toolchain (pinned in `rust-toolchain.toml`).
 
-Dependency versions and features are pinned once in `[workspace.dependencies]`;
-crates say `foo.workspace = true` and nothing else. Deps are current — do not
-downgrade. Run `cargo machete` before finishing any change that touches a
-dependency list.
+## Constraints
+
+{%- if use_async %}
+- **Async**: `tokio`; logging via `tracing`.
+{%- endif %}
+{%- if use_http %}
+- **HTTP**: `reqwest`; serialisation via `serde`.
+{%- endif %}
+{%- if use_cli %}
+- **CLI**: args via `clap`; `.env` via `dotenvy`.
+{%- endif %}
+{%- if use_db %}
+- **Database**: Postgres via `sqlx`, compile-time macros only (`query!`, `query_as!`, `query_scalar!`). Never runtime `query()`.
+{%- endif %}
+- **Dependencies**: Versions and features pinned once in `[workspace.dependencies]`; crates say `foo.workspace = true` and nothing else. Do not downgrade. Run `cargo machete` when editing a dependency list.
+- **Lints**: Fix the code instead of silencing the lint. A narrow `#[expect(lint, reason = "...")]` is acceptable only after a code fix was considered and rejected. Widen the root `Cargo.toml` lint table only when the lint is wrong project-wide.
 
 ## Validation
 
-Run validation **at the end of a plan or task**, not between edits. Compute time
-is the bottleneck on this machine.
+Run validation **at the end of a plan or task**, not between edits — compute time is the bottleneck on this machine.
 
 While working, prefer the narrowest check that can fail:
 
-```bash
+```sh
 cargo check -p <crate>
 cargo clippy -p <crate> --all-targets --all-features -- -D warnings
 ```
 
 Full gate, once, before declaring a task done:
 
-```bash
+```sh
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-targets --all-features
 cargo fmt --all
 ```
 
-Code behind another target triple is invisible to the commands above. When you
-touch it, lint it explicitly:
+Code behind another target triple is invisible to the above; lint it explicitly when touched:
 
-```bash
+```sh
 cargo clippy --target wasm32-unknown-unknown --all-targets --all-features -- -D warnings
 ```
-
-Fixing the code always beats silencing the lint, and is the first thing to try.
-When a lint is genuinely wrong at one specific site, a narrow
-`#[expect(lint, reason = "...")]` on the smallest scope that covers it is
-acceptable. Reach for it after a code change has been considered and
-rejected, not instead of considering one. Widen the lint table in the root
-`Cargo.toml` only when the lint is wrong for the whole project.
 {%- if use_db %}
 
 ## Database
 
-**Never run a `sqlx` command that writes to the remote database.** The
-`DATABASE_URL` in `.env` points at it. Migration files are immutable once
-written and every schema change needs human sign-off, so `sqlx database
-create`, `sqlx database drop` and `sqlx migrate run` only ever run against a
-local or throwaway Postgres. Point them at it explicitly:
-
-```bash
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/{{crate_name}} sqlx migrate run
-```
-
-`cargo sqlx prepare` reads the schema and writes only `.sqlx/`, so it is safe to
-run in any environment.
-
+- **Remote DB (`DATABASE_URL` in `.env`)**: Never run a `sqlx` command that writes to it. Migration files are immutable once written; every schema change needs human sign-off.
+- **Local/Throwaway**: `sqlx database create|drop` and `sqlx migrate run` only ever run here, pointed at it explicitly:
+    ```sh
+    DATABASE_URL=postgres://postgres:postgres@localhost:5432/{{crate_name}} sqlx migrate run
+    ```
+- **`cargo sqlx prepare`**: Reads the schema and writes only `.sqlx/`; safe in any environment.
 {%- endif %}
 
-## Code style
+## Code Style
 
-Follow single responsibility in both code and project structure. One reason to
-change per function, per module, per crate. Split a file before it grows a
-second concern.
-
-**Write minimal comments.** Code should carry its own meaning through naming and
-structure. Comment only these two cases:
-
-- **Non-obvious performance work** — when code is written in an unusual or
-  convoluted way for a measurable gain, say why. The next reader will otherwise
-  "simplify" it back.
-- **Math, algorithms and external sources** — link the paper, specification,
-  RFC, or vendor doc the implementation follows.
-
-Everything else — restating what the line does, section banners, changelog
-comments, TODOs without an owner — should not be written.
-
-Comments in files you edit may be rewritten or deleted between your passes, by
-the user or by tooling. That is normal. Take the file as you find it: do not
-restore stripped comments, do not re-add them on a later pass, and do not report
-it as a problem. Unexpected changes to _code_ still deserve a mention.
-
-Errors are `thiserror` enums in `error.rs`. Do not introduce `unwrap`, `expect`,
-`panic!`, `todo!`, `unimplemented!` or `dbg!` outside `#[cfg(test)]` — the lint
-table denies them, and `clippy.toml` already re-permits them in tests.
+- Single responsibility per function, module, and crate. Split a file before it grows a second concern.
+- **Minimal comments**: Only non-obvious performance work (say why, so the next reader does not "simplify" it back) and math/algorithms/external sources (link the paper, spec, RFC, or vendor doc). No restatements, banners, changelogs, or unowned TODOs.
+- Comments in files you edit may be stripped by the user or tooling between passes. Take the file as you find it: do not restore or re-add them, and do not report it. Unexpected changes to _code_ still deserve a mention.
+- **Errors**: `thiserror` enums in `error.rs`.
+- No `unwrap`, `expect`, `panic!`, `todo!`, `unimplemented!` or `dbg!` outside `#[cfg(test)]` — the lint table denies them and `clippy.toml` re-permits them in tests.
 
 ## Output
 
-Be concise. Report what changed and what the validation said. Skip preamble,
-progress narration, and summaries of work the user just watched you do.
+Concise. Report what changed and what validation said. No preamble, progress narration, or summaries of work the user just watched.
 
-## Skills
+## References
 
-`.claude/skills/rust-skills` holds 265 Rust rules across 26 categories
-(ownership, error handling, async, unsafe, API design, performance). Consult it
-when writing or reviewing non-trivial Rust.
+- `.claude/skills/rust-skills/` — 265 Rust rules across 26 categories (ownership, errors, async, unsafe, API design, performance). Consult when writing or reviewing non-trivial Rust.
